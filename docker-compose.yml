@@ -1,0 +1,114 @@
+networks:
+  homelab:
+    ipam:
+      config:
+        - subnet: 172.29.1.0/24
+
+services:
+  sonarr:
+    build:
+      context: ./services/sonarr
+    container_name: sonarr
+    volumes:
+      - ./services/sonarr/config:C:/app/config
+      - "D:/:D:/"
+    networks:
+      homelab:
+        ipv4_address: 172.29.1.11
+    restart: unless-stopped
+    depends_on:
+      - prowlarr
+      - sabnzbd
+  radarr:
+    build:
+      context: ./services/radarr
+    container_name: radarr
+    volumes:
+      - ./services/radarr/config:C:/app/config
+      - "D:/:D:/"
+    networks:
+      homelab:
+        ipv4_address: 172.29.1.12
+    restart: unless-stopped
+    depends_on:
+      - prowlarr
+      - sabnzbd
+  sabnzbd:
+    build:
+      context: ./services/sabnzbd
+    container_name: sabnzbd
+    volumes:
+      - ./services/sabnzbd/config:C:/app/config
+      - "D:/:D:/"
+    networks:
+      homelab:
+        ipv4_address: 172.29.1.13
+    restart: unless-stopped
+  prowlarr:
+    build:
+      context: ./services/prowlarr
+    container_name: prowlarr
+    volumes:
+      - ./services/prowlarr/config:C:/app/config
+    networks:
+      homelab:
+        ipv4_address: 172.29.1.14
+    restart: unless-stopped
+  qui:
+    build:
+      context: ./services/qui
+    container_name: qui
+    ports:
+      - "9006:7476"
+    volumes:
+      - ./services/qui/config:C:/app/config
+      - "D:/:D:/"
+    networks:
+      homelab:
+        ipv4_address: 172.29.1.15
+    restart: unless-stopped
+  homepage:
+    build:
+      context: ./services/homepage
+    env_file:
+      - ./services/homepage/.env
+    container_name: homepage
+    volumes:
+      - ./services/homepage/config:C:/app/config
+    networks:
+      homelab:
+        ipv4_address: 172.29.1.16
+    restart: unless-stopped
+  beszel:
+    build:
+      context: ./services/beszel
+    env_file:
+      - ./services/beszel/.env
+    container_name: beszel
+    volumes:
+      - ./services/beszel/config:C:/app/config
+    networks:
+      homelab:
+        ipv4_address: 172.29.1.17
+    restart: unless-stopped
+  caddy:
+    build:
+      context: ./services/caddy
+    container_name: caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./services/caddy/config:C:/app/config
+    networks:
+      homelab:
+        ipv4_address: 172.29.1.18
+    restart: unless-stopped
+    depends_on:
+      - homepage
+      - sonarr
+      - radarr
+      - sabnzbd
+      - prowlarr
+      - qui
+      - beszel
