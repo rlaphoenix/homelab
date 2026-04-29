@@ -4,7 +4,7 @@ import { inferFileType } from '@/lib/fileTypes'
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const files = getCartridgeFiles(Number(params.id))
+    const files = getCartridgeFiles(params.id)
     return NextResponse.json(files)
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
@@ -14,7 +14,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const body = await req.json()
-    const cartridgeId = Number(params.id)
+    const cartridgeId = params.id
     const rawFiles: Array<{ path?: string; name?: string; size?: number; file_type?: string }> = Array.isArray(body) ? body : body.files
 
     if (!rawFiles?.length) {

@@ -1,72 +1,64 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import type { Cartridge } from '@/lib/db'
 import { CARTRIDGE_COLORS } from '@/lib/colors'
+import { LTO_CAPACITIES } from '@/lib/ltoCapacities'
 
-type Props = { onClose: () => void; onAdded: (c: Cartridge) => void }
+type Props = {
+  cartridge: Cartridge
+  onClose: () => void
+  onSaved: (updated: Cartridge) => void
+}
 
-const DEFAULT_COLOR = CARTRIDGE_COLORS[0] // Stone — matches current muted text
-
-export default function AddCartridgeModal({ onClose, onAdded }: Props) {
-  const [label, setLabel] = useState('')
-  const [color, setColor] = useState(DEFAULT_COLOR.hex)
-  const [category, setCategory] = useState('')
+export default function EditCartridgeModal({ cartridge, onClose, onSaved }: Props) {
+  const [name, setName] = useState(cartridge.name)
+  const [category, setCategory] = useState(cartridge.category)
+  const [color, setColor] = useState(cartridge.label_color)
+  const [capacity, setCapacity] = useState(cartridge.capacity ?? 0)
+  const [status, setStatus] = useState<'good' | 'failing' | 'failed'>(cartridge.status ?? 'good')
   const [categories, setCategories] = useState<string[]>([])
   const [showCatDrop, setShowCatDrop] = useState(false)
-  const [driveChecking, setDriveChecking] = useState(true)
-  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const labelRef = useRef<HTMLInputElement>(null)
+  const mouseDownOnBackdrop = useRef(false)
 
-  // On open: fetch drive label and existing categories in parallel
   useEffect(() => {
-    let cancelled = false
-
-    Promise.all([
-      fetch('/api/drive-info').then(r => r.json()).catch(() => null),
-      fetch('/api/categories').then(r => r.json()).catch(() => []),
-    ]).then(([driveInfo, cats]) => {
-      if (cancelled) return
-      if (driveInfo?.accessible && driveInfo.label) setLabel(driveInfo.label)
-      if (Array.isArray(cats)) setCategories(cats)
-      setDriveChecking(false)
-      // Focus the label input once it's enabled
-      setTimeout(() => labelRef.current?.focus(), 0)
-    })
-
-    return () => { cancelled = true }
+    fetch('/api/categories').then(r => r.json()).then(d => {
+      if (Array.isArray(d)) setCategories(d)
+    }).catch(() => {})
   }, [])
 
   const filteredCats = category.trim()
     ? categories.filter(c => c.toLowerCase().includes(category.toLowerCase()))
     : categories
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!label.trim()) { setError('label required'); return }
+    if (!name.trim()) { setError('name required'); return }
     if (!category.trim()) { setError('category required'); return }
     setError('')
-    setLoading(true)
+    setSaving(true)
     try {
-      const res = await fetch('/api/cartridges', {
-        method: 'POST',
+      const res = await fetch(`/api/cartridges/${cartridge.id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: label.trim(), label_color: color, category: category.trim() }),
+        body: JSON.stringify({ name: name.trim(), label_color: color, category: category.trim(), capacity, status }),
       })
       if (!res.ok) { setError((await res.json()).error || 'failed'); return }
-      onAdded(await res.json())
-    } finally { setLoading(false) }
+      onSaved(await res.json())
+    } finally { setSaving(false) }
   }
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-bg/75 backdrop-blur-sm"
-      onClick={e => e.target === e.currentTarget && onClose()}
+      onMouseDown={e => { mouseDownOnBackdrop.current = e.target === e.currentTarget }}
+      onMouseUp={e => { if (mouseDownOnBackdrop.current && e.target === e.currentTarget) onClose() }}
     >
       <div className="w-full max-w-sm mx-6 bg-bg border border-border fade-up shadow-sm">
         <div className="flex items-center justify-between px-8 py-5 border-b border-border">
-          <span className="text-[10px] tracking-ultra uppercase text-ink">new cartridge</span>
+          <span className="text-[10px] tracking-ultra uppercase text-ink">cartridge settings</span>
           <button
             onClick={onClose}
             className="text-[10px] tracking-widest uppercase text-muted hover:text-ink transition-colors px-2 py-1 rounded bg-surface hover:bg-border"
@@ -75,21 +67,16 @@ export default function AddCartridgeModal({ onClose, onAdded }: Props) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-8 py-8 space-y-7">
-          {/* Label */}
+        <form onSubmit={handleSave} className="px-8 py-8 space-y-7">
+          {/* Name */}
           <div>
-            <label className="block text-[10px] tracking-widest uppercase text-muted mb-3">
-              label
-              {driveChecking && <span className="ml-2 text-dim animate-pulse">checking Y:…</span>}
-            </label>
+            <label className="block text-[10px] tracking-widest uppercase text-muted mb-3">name</label>
             <input
-              ref={labelRef}
+              autoFocus
               type="text"
-              value={label}
-              onChange={e => setLabel(e.target.value)}
-              disabled={driveChecking}
-              placeholder={driveChecking ? '' : 'e.g. LTO-001'}
-              className="w-full bg-transparent border-0 border-b border-border pb-2 text-sm text-ink placeholder:text-dim focus:outline-none focus:border-text transition-colors tracking-wide disabled:opacity-40 disabled:cursor-wait"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className="w-full bg-transparent border-0 border-b border-border pb-2 text-sm text-ink placeholder:text-dim focus:outline-none focus:border-text transition-colors tracking-wide"
             />
           </div>
 
@@ -102,7 +89,6 @@ export default function AddCartridgeModal({ onClose, onAdded }: Props) {
               onChange={e => setCategory(e.target.value)}
               onFocus={() => setShowCatDrop(true)}
               onBlur={() => setTimeout(() => setShowCatDrop(false), 150)}
-              placeholder="e.g. Personal, Work, Archive"
               className="w-full bg-transparent border-0 border-b border-border pb-2 text-sm text-ink placeholder:text-dim focus:outline-none focus:border-text transition-colors tracking-wide"
             />
             {showCatDrop && filteredCats.length > 0 && (
@@ -119,6 +105,35 @@ export default function AddCartridgeModal({ onClose, onAdded }: Props) {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Capacity */}
+          <div>
+            <label className="block text-[10px] tracking-widest uppercase text-muted mb-3">tape capacity</label>
+            <select
+              value={capacity}
+              onChange={e => setCapacity(Number(e.target.value))}
+              className="w-full bg-transparent border-0 border-b border-border pb-2 text-sm text-ink focus:outline-none focus:border-text transition-colors tracking-wide appearance-none cursor-pointer"
+            >
+              <option value={0}>Not set</option>
+              {LTO_CAPACITIES.map(t => (
+                <option key={t.bytes} value={t.bytes}>{t.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Status */}
+          <div>
+            <label className="block text-[10px] tracking-widest uppercase text-muted mb-3">status</label>
+            <select
+              value={status}
+              onChange={e => setStatus(e.target.value as 'good' | 'failing' | 'failed')}
+              className="w-full bg-transparent border-0 border-b border-border pb-2 text-sm text-ink focus:outline-none focus:border-text transition-colors tracking-wide appearance-none cursor-pointer"
+            >
+              <option value="good">Good</option>
+              <option value="failing">Failing</option>
+              <option value="failed">Failed</option>
+            </select>
           </div>
 
           {/* Color */}
@@ -144,15 +159,27 @@ export default function AddCartridgeModal({ onClose, onAdded }: Props) {
             </div>
           </div>
 
+          {/* Read-only fields */}
+          <div className="space-y-4 pt-2 border-t border-border">
+            <div>
+              <label className="block text-[10px] tracking-widest uppercase text-muted mb-1.5">label</label>
+              <p className="text-sm text-muted tracking-wide font-mono select-all">{cartridge.title}</p>
+            </div>
+            <div>
+              <label className="block text-[10px] tracking-widest uppercase text-muted mb-1.5">guid</label>
+              <p className="text-[11px] text-muted tracking-wide font-mono select-all break-all">{cartridge.id}</p>
+            </div>
+          </div>
+
           {error && <p className="text-[10px] text-red-500 tracking-wide">{error}</p>}
 
           <div className="flex items-center gap-3 pt-1">
             <button
               type="submit"
-              disabled={loading || driveChecking || !label.trim() || !category.trim()}
+              disabled={saving || !name.trim() || !category.trim()}
               className="text-[10px] tracking-widest uppercase px-4 py-2 rounded-md bg-ink text-bg hover:opacity-80 transition-opacity disabled:opacity-30"
             >
-              {loading ? 'creating…' : 'create'}
+              {saving ? 'saving…' : 'save'}
             </button>
             <button
               type="button"

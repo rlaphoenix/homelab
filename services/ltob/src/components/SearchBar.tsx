@@ -1,7 +1,5 @@
 'use client'
 
-import { Search, X, Loader2 } from 'lucide-react'
-
 type Props = {
   value: string
   onChange: (v: string) => void
@@ -11,23 +9,24 @@ type Props = {
 export default function SearchBar({ value, onChange, loading }: Props) {
   return (
     <div className="relative w-full">
-      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted w-5 h-5 pointer-events-none" />
       <input
         type="text"
         value={value}
         onChange={e => onChange(e.target.value)}
-        placeholder="Search files across all cartridges…"
-        className="w-full bg-surface border border-border rounded-xl pl-12 pr-12 py-3.5 text-text placeholder:text-muted text-base focus:outline-none focus:border-accent/60 focus:bg-surface transition-all"
+        placeholder="Search files..."
+        className="w-full bg-transparent border-0 border-b border-border pb-2 pt-1 px-0 text-base text-text placeholder:text-dim focus:outline-none focus:border-text transition-colors"
       />
       {loading && (
-        <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 text-accent w-4 h-4 animate-spin" />
+        <span className="absolute right-0 top-1 text-[10px] text-muted tracking-widest uppercase animate-pulse">
+          searching
+        </span>
       )}
       {!loading && value && (
         <button
-          onClick={() => onChange('')}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-text transition-colors"
+          onMouseDown={e => { e.preventDefault(); onChange('') }}
+          className="absolute right-0 top-1 text-[10px] text-muted hover:text-ink transition-colors tracking-widest uppercase"
         >
-          <X className="w-4 h-4" />
+          clear
         </button>
       )}
     </div>

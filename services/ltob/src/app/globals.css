@@ -2,61 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --bg: #0a0a0b;
-  --surface: #141416;
-  --border: #252528;
-  --accent: #cf7c51;
-  --text: #f0ebe4;
-  --muted: #6b6b75;
+* { box-sizing: border-box; }
+
+html, body {
+  background: #f9f7f2;
+  color: #5a5a5a;
+  -webkit-font-smoothing: antialiased;
 }
 
-* {
-  box-sizing: border-box;
-}
+::selection { background: #1a1a1a; color: #f9f7f2; }
 
-html,
-body {
-  background: var(--bg);
-  color: var(--text);
-}
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #e0dbd0; }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+@keyframes fadeUp {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
 }
-
-::-webkit-scrollbar-track {
-  background: var(--surface);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--muted);
-}
-
-.canvas-container canvas {
-  display: block;
-}
+.fade-up { animation: fadeUp 0.3s ease both; }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
+.fade-in { animation: fadeIn 0.2s ease both; }
 
-.fade-in {
-  animation: fadeIn 0.3s ease forwards;
+/* View Transitions — cross-fade between major views */
+::view-transition-old(root) {
+  animation: 160ms ease both vt-out;
 }
-
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-8px); }
-  to { opacity: 1; transform: translateX(0); }
+::view-transition-new(root) {
+  animation: 220ms ease both vt-in;
 }
-
-.slide-in {
-  animation: slideIn 0.25s ease forwards;
+@keyframes vt-out {
+  to { opacity: 0; }
+}
+@keyframes vt-in {
+  from { opacity: 0; }
 }

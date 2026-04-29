@@ -1,7 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['better-sqlite3'],
+  async rewrites() {
+    return [
+      { source: '/cartridge/:id', destination: '/' },
+      { source: '/search', destination: '/' },
+    ]
   },
 }
 

@@ -5,17 +5,24 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: '#0a0a0b',
-        surface: '#141416',
-        border: '#252528',
-        accent: '#cf7c51',
-        'accent-dim': '#9a5a38',
-        text: '#f0ebe4',
-        muted: '#6b6b75',
+        bg: '#f9f7f2',
+        surface: '#f1ede3',
+        border: '#e0dbd0',
+        text: '#5a5a5a',
+        muted: '#b0aba0',
+        dim: '#ccc8be',
+        ink: '#1a1a1a',
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
-        hand: ['var(--font-caveat)', 'cursive'],
+      },
+      letterSpacing: {
+        widest: '0.18em',
+        ultra: '0.3em',
+      },
+      transitionDuration: {
+        '700': '700ms',
+        '900': '900ms',
       },
     },
   },
