@@ -1,0 +1,165 @@
+networks:
+  homelab:
+    ipam:
+      config:
+        - subnet: 172.29.1.0/24
+
+services:
+  caddy:
+    build:
+      context: ./services/caddy
+      args:
+        CADDY_VERSION: ${CADDY_VERSION}
+    container_name: caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./services/caddy/config:C:/app/config
+    networks:
+      homelab:
+        ipv4_address: 172.29.1.18
+    restart: unless-stopped
+    depends_on:
+      - homepage
+      - sonarr
+      - radarr
+      - sabnzbd
+      - prowlarr
+      - qui
+      - beszel
+      - ltob
+  homepage:
+    build:
+      context: ./services/homepage
+      args:
+        HOMEPAGE_VERSION: ${HOMEPAGE_VERSION}
+    env_file:
+      - ./services/homepage/.env
+    container_name: homepage
+    volumes:
+      - ./services/homepage/config:C:/app/config
+    networks:
+      homelab:
+        ipv4_address: 172.29.1.16
+    restart: unless-stopped
+  sonarr:
+    build:
+      context: ./services/sonarr
+      args:
+        SONARR_VERSION: ${SONARR_VERSION}
+    container_name: sonarr
+    volumes:
+      - ./services/sonarr/config:C:/ProgramData/Sonarr
+      - "D:/:D:/"
+    networks:
+      homelab:
+        ipv4_address: 172.29.1.11
+    restart: unless-stopped
+    depends_on:
+      - prowlarr
+      - sabnzbd
+  radarr:
+    build:
+      context: ./services/radarr
+      args:
+        RADARR_VERSION: ${RADARR_VERSION}
+    container_name: radarr
+    volumes:
+      - ./services/radarr/config:C:/ProgramData/Radarr
+      - "D:/:D:/"
+    networks:
+      homelab:
+        ipv4_address: 172.29.1.12
+    restart: unless-stopped
+    depends_on:
+      - prowlarr
+      - sabnzbd
+  prowlarr:
+    build:
+      context: ./services/prowlarr
+      args:
+        PROWLARR_VERSION: ${PROWLARR_VERSION}
+    container_name: prowlarr
+    volumes:
+      - ./services/prowlarr/config:C:/ProgramData/Prowlarr
+    networks:
+      homelab:
+        ipv4_address: 172.29.1.14
+    restart: unless-stopped
+  clonarr:
+    build:
+      context: ./services/clonarr
+      args:
+        CLONARR_VERSION: ${CLONARR_VERSION}
+    env_file:
+      - ./services/clonarr/.env
+    container_name: clonarr
+    volumes:
+      - ./services/clonarr/config:C:/config
+    networks:
+      homelab:
+        ipv4_address: 172.29.1.20
+    restart: unless-stopped
+    depends_on:
+      - sonarr
+      - radarr
+  qui:
+    build:
+      context: ./services/qui
+      args:
+        QUI_VERSION: ${QUI_VERSION}
+    container_name: qui
+    ports:
+      - "9006:7476"
+    volumes:
+      - ./services/qui/config:C:/app/config
+      - "D:/:D:/"
+    networks:
+      homelab:
+        ipv4_address: 172.29.1.15
+    restart: unless-stopped
+  sabnzbd:
+    build:
+      context: ./services/sabnzbd
+      args:
+        SABNZBD_VERSION: ${SABNZBD_VERSION}
+    container_name: sabnzbd
+    volumes:
+      - ./services/sabnzbd/config:C:/app/config
+      - "D:/:D:/"
+    networks:
+      homelab:
+        ipv4_address: 172.29.1.13
+    restart: unless-stopped
+  beszel:
+    build:
+      context: ./services/beszel
+      args:
+        BESZEL_VERSION: ${BESZEL_VERSION}
+    env_file:
+      - ./services/beszel/.env
+    container_name: beszel
+    ports:
+      - "9008:8090"
+    volumes:
+      - ./services/beszel/config:C:/app/config
+    networks:
+      homelab:
+        ipv4_address: 172.29.1.17
+    restart: unless-stopped
+  ltob:
+    build:
+      context: ./services/ltob
+      args:
+        LTOB_VERSION: ${LTOB_VERSION}
+        GITHUB_TOKEN: ${LTOB_GITHUB_TOKEN}
+    env_file:
+      - ./services/ltob/.env
+    container_name: ltob
+    volumes:
+      - ./services/ltob/config:C:/app/data
+    networks:
+      homelab:
+        ipv4_address: 172.29.1.19
+    restart: unless-stopped
